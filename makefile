@@ -35,10 +35,11 @@ LIBFUZZER_BUILD_FLAGS := -fsanitize-coverage=edge \
   -L $(LIBFUZZER_DIR)/ \
   -lFuzzer
 
+# FIXME: Clang 3.9 miscompiles at -O2
 interval_libfuzzer: demos/interval/interval.cc demos/interval/interval.h demos/interval/libfuzzer_driver.cc libfuzzer
 	clang++ \
 		-Wall \
-		-O2 \
+		-O0 \
 		-g \
 		$(LIBFUZZER_BUILD_FLAGS) \
 		-DBUG=0 \
