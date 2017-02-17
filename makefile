@@ -6,6 +6,7 @@ LIBFUZZER_DIR := LibFuzzer
 AFLCXX := $(AFL_DIR)/afl-g++
 AFLFUZZ := $(AFL_DIR)/afl-fuzz
 CFLAGS := -Wall -g
+CXX := g++
 
 all:: help
 
@@ -116,9 +117,22 @@ interval_libfuzzer: demos/interval/interval.cc demos/interval/interval.h demos/i
 fuzz_interval_libfuzzer: interval_libfuzzer
 	./$<
 
+# afl-g++ passed -O3 by default which causes the benchmark to be mis-compiled
+# so we pass `AFL_DONT_OPTIMIZE=1` to avoid this
 interval_afl: demos/interval/interval.cc demos/interval/interval.h demos/interval/afl_driver.cc afl
+	AFL_DONT_OPTIMIZE=1 \
 	$(AFLCXX) \
 		$(CFLAGS) \
+		-O2 \
+		$(interval_benchmark_flags) \
+		$(filter %.cc, $^) \
+		-o $@
+
+# Target for doing replay without any instrumentation
+interval_afl_replay: demos/interval/interval.cc demos/interval/interval.h demos/interval/afl_driver.cc
+	$(CXX) \
+		$(CFLAGS) \
+		-O2 \
 		$(interval_benchmark_flags) \
 		$(filter %.cc, $^) \
 		-o $@
