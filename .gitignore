@@ -1,0 +1,7 @@
+*.swp
+
+# Binaries
+interval_afl
+interval_libfuzzer
+simple_afl
+simple_libfuzzer
