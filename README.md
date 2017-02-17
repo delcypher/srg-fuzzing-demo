@@ -18,6 +18,20 @@ so you need to use Clang 3.9 built with the corresponding compiler-rt.
 make libfuzzer
 ```
 
+## Running the `simple` demo
+
+To fuzz using libfuzzer:
+
+```
+make fuzz_simple_libfuzzer
+```
+
+To fuzz using AFL:
+
+```
+make fuzz_simple_afl
+```
+
 ## Running the `interval` demo
 
 To fuzz using libfuzzer:
