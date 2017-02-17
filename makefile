@@ -10,7 +10,7 @@ CFLAGS := -Wall -g
 all:: help
 
 help:
-	@echo "Run"
+	@echo "Help"
 	@echo ""
 	@echo "Targets:"
 	@echo ""
@@ -18,6 +18,8 @@ help:
 	@echo "clean"
 	@echo "fuzz_interval_libfuzzer"
 	@echo "fuzz_interval_afl"
+	@echo "fuzz_simple_afl"
+	@echo "fuzz_simple_libfuzzer"
 	@echo "help"
 	@echo "interval_afl"
 	@echo "interval_libfuzzer"
