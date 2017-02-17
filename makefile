@@ -28,19 +28,78 @@ afl:
 	cd $(AFL_DIR) && env MAKEFLAGS="" make -j$(NPROC)
 	cd $(AFL_DIR)/llvm_mode && env MAKEFLAGS="" make -j$(NPROC)
 
+clean::
+	cd $(AFL_DIR) && make clean
+	cd $(AFL_DIR)/llvm_mode && make clean
+
 # FIXME: This is lame. We should only rebuild when necessary
 libfuzzer: $(LIBFUZZER_DIR)/libFuzzer.a
 
 $(LIBFUZZER_DIR)/libFuzzer.a:
-	cd LibFuzzer && ./build.sh
+	cd $(LIBFUZZER_DIR) && ./build.sh
 
-  #-fsanitizer-coverage=trace-pc-guard
+clean::
+	cd $(LIBFUZZER_DIR) && rm -f libFuzzer.a
+
+###############################################################################
+# Common build flags
+###############################################################################
+
+# Note current LibFuzzer docs says to use `-fsanitizer-coverage=trace-pc-guard`
+# but Clang 3.9 doesn't support that and Clang 4.0 hasn't been released yet so
+# just use `-fsanitize-coverage=edge` for now.
 LIBFUZZER_BUILD_FLAGS := -fsanitize-coverage=edge \
   -fno-omit-frame-pointer \
   -fsanitize=address \
   -L $(LIBFUZZER_DIR)/ \
   -lFuzzer
 
+AFLFUZZ_ENV:= \
+	AFL_SKIP_CPUFREQ=1
+
+###############################################################################
+# Simple benchmark
+###############################################################################
+simple_libfuzzer: demos/simple/foo.cc demos/simple/foo.h demos/simple/libfuzzer_driver.cc libfuzzer
+	clang++ \
+		$(CFLAGS) \
+		$(LIBFUZZER_BUILD_FLAGS) \
+		$(interval_benchmark_flags) \
+		$(filter %.cc, $^) \
+		-o $@
+
+fuzz_simple_libfuzzer: simple_libfuzzer
+	./$<
+
+simple_afl: demos/simple/foo.cc demos/simple/foo.h demos/simple/afl_driver.cc afl
+	$(AFLCXX) \
+		$(CFLAGS) \
+		$(interval_benchmark_flags) \
+		$(filter %.cc, $^) \
+		-o $@
+
+clean::
+	rm -f simple_afl simple_libfuzzer
+
+# Fuzz using AFL. We seed with an input
+# that we know doesn't cause a crash.
+fuzz_simple_afl: simple_afl
+	mkdir -p simple_afl_inputs
+	@echo "Creating dummy input"
+	echo "hello" > simple_afl_inputs/0
+	mkdir -p simple_afl_outputs
+	$(AFLFUZZ_ENV) $(AFLFUZZ) \
+		-i ./simple_afl_inputs \
+		-o ./simple_afl_outputs \
+		./$<
+
+# FIXME: Do this properly
+clean::
+	rm -rf simple_afl_inputs simple_afl_outputs
+
+###############################################################################
+# Interval benchmark
+###############################################################################
 interval_benchmark_flags := -DBUG=0 -DN=7
 
 # FIXME: Clang 3.9 miscompiles at -O2
@@ -62,8 +121,8 @@ interval_afl: demos/interval/interval.cc demos/interval/interval.h demos/interva
 		$(filter %.cc, $^) \
 		-o $@
 
-AFLFUZZ_ENV:= \
-	AFL_SKIP_CPUFREQ=1
+clean::
+	rm -f interval_afl interval_libfuzzer
 
 # Fuzz using AFL. We seed with an input
 # that we know doesn't cause a crash.
@@ -81,4 +140,4 @@ fuzz_interval_afl: interval_afl
 clean::
 	rm -rf interval_afl_inputs interval_afl_outputs
 
-.PHONY: all afl libfuzzer help fuzz_interval_afl clean
+.PHONY: all afl libfuzzer help fuzz_interval_afl clean fuzz_simple_libfuzzer fuzz_simple_afl
