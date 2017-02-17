@@ -70,7 +70,7 @@ void dump_float(const char* name, float f) {
 }
 
 
-int run_benchmark(float initial) {
+extern "C" int run_benchmark(float initial) {
   dump_float("initial", initial);
   // The program adds 'increment' to 'initial' N times.
   // With e.g. N=7 and BUG=1, these values cause failure
